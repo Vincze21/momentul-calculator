@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Momentum Calculator | Financial Analysis Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #16161f;
+            --bg-elevated: #1c1c28;
+
+            --text-primary: #f4f4f6;
+            --text-secondary: #9d9daa;
+            --text-muted: #5c5c6d;
+
+            --accent-gold: #d4a853;
+            --accent-gold-dim: #b8923f;
+            --accent-gold-glow: rgba(212, 168, 83, 0.3);
+
+            --positive: #22c55e;
+            --positive-dim: #16a34a;
+            --positive-glow: rgba(34, 197, 94, 0.2);
+
+            --negative: #ef4444;
+            --negative-dim: #dc2626;
+            --negative-glow: rgba(239, 68, 68, 0.2);
+
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-medium: rgba(255, 255, 255, 0.1);
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
+
+            --shadow-glow: 0 0 60px -12px var(--accent-gold-glow);
+            --shadow-card: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Gradient mesh background */
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(212, 168, 83, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 80% at 80% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 60% at 60% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Animated grid lines */
+        .grid-lines {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 0%, transparent 70%);
+        }
+
+        .container {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 24px;
+        }
+
+        .header-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .header h1 {
+            font-size: clamp(42px, 8vw, 72px);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 20px;
+        }
+
+        .header h1 span {
+            background: linear-gradient(135deg, var(--accent-gold) 0%, #f5d799 50%, var(--accent-gold) 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% center; }
+            50% { background-position: 200% center; }
+        }
+
+        .header p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Instructions card */
+        .instructions {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 28px 32px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease-out 0.1s both;
+        }
+
+        .instructions::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold-dim), transparent);
+        }
+
+        .instructions-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .instructions-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dim) 100%);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .instructions-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .instructions-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .instruction-number {
+            width: 24px;
+            height: 24px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent-gold);
+            flex-shrink: 0;
+        }
+
+        /* Main calculator card */
+        .calculator-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .calculator-card::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-subtle);
+        }
+
+        /* Error message */
+        .error-message {
+            background: var(--negative-glow);
+            border: 1px solid var(--negative);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--negative);
+        }
+
+        .error-message.show {
+            display: flex;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        /* Input grid */
+        .input-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip-trigger {
+            width: 18px;
+            height: 18px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .tooltip:hover .tooltip-trigger {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        .tooltip-content {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%) translateY(8px);
+            width: 280px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+            z-index: 100;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: var(--bg-elevated);
+        }
+
+        .tooltip:hover .tooltip-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .input-sublabel {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: -4px;
+        }
+
+        /* Input styling */
+        input[type="text"],
+        input[type="number"] {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: all 0.25s ease;
+            width: 100%;
+        }
+
+        input[type="text"]:hover,
+        input[type="number"]:hover {
+            border-color: var(--border-medium);
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px var(--accent-gold-glow);
+            background: var(--bg-primary);
+        }
+
+        input::placeholder {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* Remove number input arrows */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Ticker input special styling */
+        #ticker {
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* SMA section */
+        .sma-section {
+            margin-top: 8px;
+            padding-top: 24px;
+            border-top: 1px dashed var(--border-subtle);
+        }
+
+        .sma-label-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .optional-badge {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            background: var(--bg-elevated);
+            padding: 4px 10px;
+            border-radius: 100px;
+        }
+
+        /* Calculate button */
+        .calculate-button {
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dim) 100%);
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 20px 32px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: #0a0a0f;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 32px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calculate-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .calculate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px var(--accent-gold-glow);
+        }
+
+        .calculate-button:hover::before {
+            transform: translateX(100%);
+        }
+
+        .calculate-button:active {
+            transform: translateY(0);
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            margin-top: 40px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        /* Result cards */
+        .result-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            border-color: var(--border-medium);
+            transform: translateY(-2px);
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+        }
+
+        .result-card.roc3m::before { background: var(--accent-blue); }
+        .result-card.roc6m::before { background: var(--accent-purple); }
+        .result-card.final::before { background: var(--accent-gold); }
+        .result-card.trend::before { background: var(--accent-cyan); }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .result-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-title {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .result-card.roc3m .result-value { color: var(--accent-blue); }
+        .result-card.roc6m .result-value { color: var(--accent-purple); }
+        .result-card.final .result-value { color: var(--accent-gold); }
+
+        .result-calculation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        /* Trend card special */
+        .result-card.trend {
+            grid-column: 1 / -1;
+        }
+
+        .trend-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .trend-status.valid {
+            background: var(--positive-glow);
+            color: var(--positive);
+        }
+
+        .trend-status.invalid {
+            background: var(--negative-glow);
+            color: var(--negative);
+        }
+
+        /* Decision box */
+        .decision-box {
+            background: var(--bg-secondary);
+            border: 2px solid;
+            border-radius: var(--radius-xl);
+            padding: 48px 40px;
+            text-align: center;
+            margin-top: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .decision-box::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.05;
+        }
+
+        .decision-box.buy {
+            border-color: var(--positive);
+        }
+
+        .decision-box.buy::before {
+            background: radial-gradient(circle at center, var(--positive) 0%, transparent 70%);
+        }
+
+        .decision-box.wait {
+            border-color: var(--negative);
+        }
+
+        .decision-box.wait::before {
+            background: radial-gradient(circle at center, var(--negative) 0%, transparent 70%);
+        }
+
+        .decision-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .decision-box.buy .decision-icon {
+            background: var(--positive-glow);
+            border: 2px solid var(--positive);
+        }
+
+        .decision-box.wait .decision-icon {
+            background: var(--negative-glow);
+            border: 2px solid var(--negative);
+        }
+
+        .decision-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .decision-box.buy .decision-title { color: var(--positive); }
+        .decision-box.wait .decision-title { color: var(--negative); }
+
+        .decision-ticker {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .decision-reasons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .reason {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .reason-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .reason.met .reason-icon {
+            background: var(--positive-glow);
+            color: var(--positive);
+        }
+
+        .reason.not-met .reason-icon {
+            background: var(--negative-glow);
+            color: var(--negative);
+        }
+
+        .reason-text {
+            color: var(--text-secondary);
+        }
+
+        /* Reset button */
+        .reset-button {
+            background: transparent;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            padding: 16px 28px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.25s ease;
+        }
+
+        .reset-button:hover {
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            margin-top: 60px;
+            padding: 32px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .disclaimer-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 20px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .disclaimer-title {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .disclaimer-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .disclaimer-text strong {
+            color: var(--text-primary);
+        }
+
+        .disclaimer-text .warning {
+            color: var(--negative);
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 16px 60px;
+            }
+
+            .header h1 {
+                font-size: 36px;
+            }
+
+            .calculator-card {
+                padding: 28px 20px;
+            }
+
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .decision-box {
+                padding: 36px 24px;
+            }
+
+            .decision-title {
+                font-size: 22px;
+            }
+
+            .result-value {
+                font-size: 26px;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-muted);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="grid-lines"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-badge">
+                <span>Live Analysis</span>
+            </div>
+            <h1><span>Momentum</span> Calculator</h1>
+            <p>Analizează forța oricărui activ folosind metrici de momentum profesionale</p>
+        </header>
+
+        <div class="instructions">
+            <div class="instructions-header">
+                <div class="instructions-icon">📊</div>
+                <div class="instructions-title">Cum să folosești calculatorul</div>
+            </div>
+            <div class="instructions-list">
+                <div class="instruction-item">
+                    <div class="instruction-number">01</div>
+                    <span>Introdu simbolul activului (ex: SPY, AAPL, TSLA)</span>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-number">02</div>
+                    <span>Completează prețurile: actual, acum 3 luni și acum 6 luni</span>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-number">03</div>
+                    <span>Opțional: adaugă SMA 200 pentru verificarea trendului pe termen lung</span>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-number">04</div>
+                    <span>Apasă "Calculează Momentum" și primești analiza completă</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="calculator-card">
+            <div class="section-title">Date de intrare</div>
+
+            <div class="error-message" id="errorMessage">
+                <span>⚠️</span>
+                <span>Completează toate câmpurile obligatorii cu valori valide!</span>
+            </div>
+
+            <div class="input-grid">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label class="input-label">
+                            Simbol activ (Ticker)
+                        </label>
+                        <input type="text" id="ticker" placeholder="SPY" />
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">
+                            Preț curent (USD)
+                            <div class="tooltip">
+                                <div class="tooltip-trigger">?</div>
+                                <div class="tooltip-content">Prețul de închidere cel mai recent al activului. Acest preț este folosit ca punct de referință pentru calculul momentum-ului.</div>
+                            </div>
+                        </label>
+                        <input type="number" id="priceNow" step="0.01" placeholder="694.00" />
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label class="input-label">
+                            Preț acum 3 luni (USD)
+                            <div class="tooltip">
+                                <div class="tooltip-trigger">?</div>
+                                <div class="tooltip-content">ROC 3M măsoară viteza recentă de creștere - perioada scurtă înseamnă mai multă sensibilitate la mișcări recente.</div>
+                            </div>
+                        </label>
+                        <input type="number" id="price3m" step="0.01" placeholder="679.20" />
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">
+                            Preț acum 6 luni (USD)
+                            <div class="tooltip">
+                                <div class="tooltip-trigger">?</div>
+                                <div class="tooltip-content">ROC 6M măsoară trendul pe termen mediu - perioada mai lungă reduce zgomotul și captează mișcări mai semnificative.</div>
+                            </div>
+                        </label>
+                        <input type="number" id="price6m" step="0.01" placeholder="650.30" />
+                    </div>
+                </div>
+
+                <div class="sma-section">
+                    <div class="input-group">
+                        <div class="sma-label-wrapper">
+                            <label class="input-label">
+                                SMA 200 zile (USD)
+                                <div class="tooltip">
+                                    <div class="tooltip-trigger">?</div>
+                                    <div class="tooltip-content">Media mobilă simplă pe 200 zile = trendul pe termen lung. Dacă prețul este DEASUPRA SMA200, trendul este valid. Aceasta e linia de apărare: momentum pozitiv + preț sub SMA200 = risc crescut.</div>
+                                </div>
+                            </label>
+                            <span class="optional-badge">Opțional</span>
+                        </div>
+                        <input type="number" id="sma200" step="0.01" placeholder="581.20" />
+                    </div>
+                </div>
+            </div>
+
+            <button class="calculate-button" onclick="calculateMomentum()">
+                Calculează Momentum
+            </button>
+
+            <div class="results-section" id="resultsSection">
+                <div class="section-title">Rezultate analiză</div>
+
+                <div class="results-grid">
+                    <!-- ROC 3M -->
+                    <div class="result-card roc3m">
+                        <div class="result-header">
+                            <div class="result-title-wrapper">
+                                <div class="result-title">ROC 3 Luni</div>
+                                <div class="tooltip">
+                                    <div class="tooltip-trigger">?</div>
+                                    <div class="tooltip-content">Rate of Change pe 3 luni = Viteza recentă de creștere. Valoare pozitivă = activ în ascensiune. Pragul: >+5% = momentum puternic.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="result-value" id="roc3mValue">—</div>
+                        <div class="result-calculation" id="roc3mCalc">Calculul va apărea aici</div>
+                    </div>
+
+                    <!-- ROC 6M -->
+                    <div class="result-card roc6m">
+                        <div class="result-header">
+                            <div class="result-title-wrapper">
+                                <div class="result-title">ROC 6 Luni</div>
+                                <div class="tooltip">
+                                    <div class="tooltip-trigger">?</div>
+                                    <div class="tooltip-content">Rate of Change pe 6 luni = Trendul pe termen mediu. Dacă ROC 6M > ROC 3M = accelerare; dacă ROC 6M < ROC 3M = decelerare.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="result-value" id="roc6mValue">—</div>
+                        <div class="result-calculation" id="roc6mCalc">Calculul va apărea aici</div>
+                    </div>
+
+                    <!-- Final Score -->
+                    <div class="result-card final">
+                        <div class="result-header">
+                            <div class="result-title-wrapper">
+                                <div class="result-title">Scor Momentum Final</div>
+                                <div class="tooltip">
+                                    <div class="tooltip-trigger">?</div>
+                                    <div class="tooltip-content">Formula ponderată: 60% ROC 3M + 40% ROC 6M. Pragul de intrare: >+5%. Sub +5% = așteptare.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="result-value" id="finalScore">—</div>
+                        <div class="result-calculation" id="finalCalc">Calculul va apărea aici</div>
+                    </div>
+
+                    <!-- Trend Card -->
+                    <div class="result-card trend" id="trendCard" style="display: none;">
+                        <div class="result-header">
+                            <div class="result-title-wrapper">
+                                <div class="result-title">Verificare Trend (SMA 200)</div>
+                                <div class="tooltip">
+                                    <div class="tooltip-trigger">?</div>
+                                    <div class="tooltip-content">SMA 200 = linia de apărare. Preț deasupra = zona de siguranță (bullish). Preț dedesubt = zonă de risc (bearish).</div>
+                                </div>
+                            </div>
+                            <div class="trend-status" id="trendValue">—</div>
+                        </div>
+                        <div class="result-calculation" id="trendCalc">Calculul va apărea aici</div>
+                    </div>
+                </div>
+
+                <!-- Decision Box -->
+                <div class="decision-box" id="decisionBox">
+                    <div class="decision-icon" id="decisionIcon">—</div>
+                    <div class="decision-title" id="decisionTitle">—</div>
+                    <div class="decision-ticker" id="decisionTicker"></div>
+                    <div class="decision-reasons" id="decisionReasons"></div>
+                </div>
+
+                <button class="reset-button" onclick="resetCalculator()">
+                    ↺ Calculează alt activ
+                </button>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <div class="disclaimer-icon">⚖️</div>
+            <div class="disclaimer-title">Notă Importantă</div>
+            <div class="disclaimer-text">
+                Acest calculator oferă o <strong>analiză tehnică obiectivă</strong> bazată pe formule matematice.
+                <span class="warning">Nu reprezintă sfaturi financiare!</span> Este o <strong>strategie educațională</strong> pe care fiecare
+                investitor trebuie să o adapteze la propriul profil de risc.
+                Rezultatele nu garantează câștiguri viitoare.
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-text">MOMENTUM CALCULATOR • FINANCIAL ANALYSIS TOOL</div>
+        </footer>
+    </div>
+
+    <script>
+        function calculateMomentum() {
+            // Get inputs
+            const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+            const priceNow = parseFloat(document.getElementById('priceNow').value);
+            const price3m = parseFloat(document.getElementById('price3m').value);
+            const price6m = parseFloat(document.getElementById('price6m').value);
+            const sma200 = parseFloat(document.getElementById('sma200').value);
+
+            // Validate required inputs
+            const errorMsg = document.getElementById('errorMessage');
+            if (!ticker || isNaN(priceNow) || isNaN(price3m) || isNaN(price6m)) {
+                errorMsg.classList.add('show');
+                setTimeout(() => errorMsg.classList.remove('show'), 3000);
+                return;
+            }
+            errorMsg.classList.remove('show');
+
+            // Calculate ROC 3M
+            const roc3m = ((priceNow - price3m) / price3m) * 100;
+            document.getElementById('roc3mValue').textContent = (roc3m >= 0 ? '+' : '') + roc3m.toFixed(2) + '%';
+            document.getElementById('roc3mCalc').textContent =
+                `(${priceNow.toFixed(2)} - ${price3m.toFixed(2)}) / ${price3m.toFixed(2)} × 100 = ${roc3m.toFixed(2)}%`;
+
+            // Calculate ROC 6M
+            const roc6m = ((priceNow - price6m) / price6m) * 100;
+            document.getElementById('roc6mValue').textContent = (roc6m >= 0 ? '+' : '') + roc6m.toFixed(2) + '%';
+            document.getElementById('roc6mCalc').textContent =
+                `(${priceNow.toFixed(2)} - ${price6m.toFixed(2)}) / ${price6m.toFixed(2)} × 100 = ${roc6m.toFixed(2)}%`;
+
+            // Calculate Final Score
+            const finalScore = (roc3m * 0.6) + (roc6m * 0.4);
+            document.getElementById('finalScore').textContent = (finalScore >= 0 ? '+' : '') + finalScore.toFixed(2) + '%';
+            document.getElementById('finalCalc').textContent =
+                `(${roc3m.toFixed(2)}% × 0.6) + (${roc6m.toFixed(2)}% × 0.4) = ${finalScore.toFixed(2)}%`;
+
+            // Trend check (if SMA provided)
+            let trendValid = null;
+            const trendCard = document.getElementById('trendCard');
+            const trendValueEl = document.getElementById('trendValue');
+
+            if (!isNaN(sma200)) {
+                trendValid = priceNow > sma200;
+                trendCard.style.display = 'block';
+
+                if (trendValid) {
+                    trendValueEl.textContent = '✓ Trend Valid';
+                    trendValueEl.className = 'trend-status valid';
+                } else {
+                    trendValueEl.textContent = '✗ Trend Invalid';
+                    trendValueEl.className = 'trend-status invalid';
+                }
+
+                document.getElementById('trendCalc').textContent =
+                    `${priceNow.toFixed(2)} ${trendValid ? '>' : '<'} ${sma200.toFixed(2)} (SMA 200) → Preț ${trendValid ? 'DEASUPRA' : 'SUB'} liniei de trend`;
+            } else {
+                trendCard.style.display = 'none';
+            }
+
+            // Decision logic
+            const decisionBox = document.getElementById('decisionBox');
+            const decisionIcon = document.getElementById('decisionIcon');
+            const decisionTitle = document.getElementById('decisionTitle');
+            const decisionTicker = document.getElementById('decisionTicker');
+            const decisionReasons = document.getElementById('decisionReasons');
+
+            // Check conditions
+            const momentumGood = finalScore > 5;
+            const trendGood = trendValid === null || trendValid === true;
+
+            let reasons = '';
+
+            if (momentumGood && trendGood) {
+                decisionBox.className = 'decision-box buy';
+                decisionIcon.textContent = '✓';
+                decisionTitle.textContent = 'Analiză Favorabilă';
+                decisionTicker.textContent = `Condițiile tehnice pentru ${ticker} sunt îndeplinite`;
+
+                reasons += `<div class="reason met"><div class="reason-icon">✓</div><span class="reason-text">Scor Momentum: ${finalScore.toFixed(2)}% (peste pragul de +5%)</span></div>`;
+                if (trendValid !== null) {
+                    reasons += `<div class="reason met"><div class="reason-icon">✓</div><span class="reason-text">Preț > SMA 200: Trend valid pe termen lung</span></div>`;
+                }
+                reasons += `<div class="reason met"><div class="reason-icon">✓</div><span class="reason-text">Toate condițiile tehnice sunt îndeplinite</span></div>`;
+            } else {
+                decisionBox.className = 'decision-box wait';
+                decisionIcon.textContent = '✗';
+                decisionTitle.textContent = 'Analiză Nefavorabilă';
+                decisionTicker.textContent = `Condițiile tehnice pentru ${ticker} nu sunt îndeplinite`;
+
+                if (!momentumGood) {
+                    reasons += `<div class="reason not-met"><div class="reason-icon">✗</div><span class="reason-text">Scor Momentum: ${finalScore.toFixed(2)}% (sub pragul de +5%)</span></div>`;
+                } else {
+                    reasons += `<div class="reason met"><div class="reason-icon">✓</div><span class="reason-text">Scor Momentum: ${finalScore.toFixed(2)}% (peste pragul de +5%)</span></div>`;
+                }
+
+                if (trendValid !== null) {
+                    if (!trendValid) {
+                        reasons += `<div class="reason not-met"><div class="reason-icon">✗</div><span class="reason-text">Preț < SMA 200: Trend invalid pe termen lung</span></div>`;
+                    } else {
+                        reasons += `<div class="reason met"><div class="reason-icon">✓</div><span class="reason-text">Preț > SMA 200: Trend valid pe termen lung</span></div>`;
+                    }
+                }
+
+                reasons += `<div class="reason not-met"><div class="reason-icon">!</div><span class="reason-text">Se recomandă așteptare până la îmbunătățirea condițiilor</span></div>`;
+            }
+
+            decisionReasons.innerHTML = reasons;
+
+            // Show results with animation
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.classList.add('show');
+
+            setTimeout(() => {
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        function resetCalculator() {
+            document.getElementById('ticker').value = '';
+            document.getElementById('priceNow').value = '';
+            document.getElementById('price3m').value = '';
+            document.getElementById('price6m').value = '';
+            document.getElementById('sma200').value = '';
+            document.getElementById('resultsSection').classList.remove('show');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Allow Enter key to calculate
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calculateMomentum();
+            }
+        });
+    </script>
+</body>
+</html>
