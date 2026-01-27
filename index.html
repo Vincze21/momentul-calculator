@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator Momentum - Tool Interactiv</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #3498db, #2ECC71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+        }
+
+        .instructions {
+            background: rgba(52, 152, 219, 0.1);
+            border: 2px solid #3498db;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .instructions strong {
+            color: #3498db;
+        }
+
+        .calculator-card {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 35px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(52, 152, 219, 0.3);
+        }
+
+        .input-grid {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .input-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            font-size: 14px;
+            color: #3498db;
+            transition: all 0.3s ease;
+        }
+
+        .tooltip:hover {
+            transform: scale(1.1);
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 300px;
+            background-color: rgba(0, 0, 0, 0.95);
+            color: #fff;
+            text-align: left;
+            border-radius: 10px;
+            padding: 15px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -150px;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+            font-size: 14px;
+            line-height: 1.6;
+            font-weight: normal;
+            border: 2px solid #3498db;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -8px;
+            border-width: 8px;
+            border-style: solid;
+            border-color: #3498db transparent transparent transparent;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .input-sublabel {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: -5px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #3498db;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .calculate-button {
+            background: linear-gradient(135deg, #2ECC71, #27AE60);
+            border: none;
+            border-radius: 12px;
+            padding: 18px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .calculate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+        }
+
+        .calculate-button:active {
+            transform: translateY(0);
+        }
+
+        .results-section {
+            display: none;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+        }
+
+        .result-card.roc3m {
+            border-left-color: #3498db;
+        }
+
+        .result-card.roc6m {
+            border-left-color: #9b59b6;
+        }
+
+        .result-card.final {
+            border-left-color: #f39c12;
+        }
+
+        .result-card.trend {
+            border-left-color: #e74c3c;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .result-card.roc3m .result-value {
+            color: #3498db;
+        }
+
+        .result-card.roc6m .result-value {
+            color: #9b59b6;
+        }
+
+        .result-card.final .result-value {
+            color: #f39c12;
+        }
+
+        .result-calculation {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'Courier New', monospace;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .trend-input-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .decision-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 35px;
+            text-align: center;
+            border: 3px solid;
+            margin-top: 30px;
+        }
+
+        .decision-box.buy {
+            border-color: #2ECC71;
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .decision-box.wait {
+            border-color: #E74C3C;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .decision-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+
+        .decision-title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .decision-box.buy .decision-title {
+            color: #2ECC71;
+        }
+
+        .decision-box.wait .decision-title {
+            color: #E74C3C;
+        }
+
+        .decision-reasons {
+            font-size: 18px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.85);
+            margin-top: 20px;
+        }
+
+        .decision-reasons .reason {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .reason.met {
+            border-left: 4px solid #2ECC71;
+        }
+
+        .reason.not-met {
+            border-left: 4px solid #E74C3C;
+        }
+
+        .reset-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .reset-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .disclaimer {
+            background: rgba(52, 152, 219, 0.05);
+            border: 2px solid rgba(52, 152, 219, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .disclaimer-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        .disclaimer-text {
+            font-size: 15px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .disclaimer-text strong {
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.1);
+            border: 2px solid #E74C3C;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #E74C3C;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 32px;
+            }
+
+            .trend-input-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Calculator Momentum Interactiv</h1>
+            <p>Analizează forța oricărui activ în câteva secunde</p>
+        </div>
+
+        <div class="instructions">
+            <strong>Cum folosești calculatorul:</strong><br>
+            1. Introdu simbolul activului (ex: SPY, AAPL, TSLA)<br>
+            2. Completează prețurile: actual, acum 3 luni, acum 6 luni<br>
+            3. (Opțional) Adaugă SMA 200 pentru verificare trend<br>
+            4. Apasă "Calculează Momentum" și primești analiza completă
+        </div>
+
+        <div class="calculator-card">
+            <div class="section-title">Date de intrare</div>
+
+            <div class="error-message" id="errorMessage">
+                Te rog completează toate câmpurile obligatorii cu valori valide!
+            </div>
+
+            <div class="input-grid">
+                <div class="input-group">
+                    <label class="input-label">Simbol activ (Ticker)</label>
+                    <input type="text" id="ticker" placeholder="Ex: SPY, AAPL, QQQ" />
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">
+                        Preț curent (USD)
+                        <span class="tooltip">ℹ️
+                            <span class="tooltip-text">Prețul de închidere cel mai recent al activului. Acest preț este folosit ca punct de referință pentru calculul momentum-ului.</span>
+                        </span>
+                    </label>
+                    <div class="input-sublabel">Prețul de închidere cel mai recent</div>
+                    <input type="number" id="priceNow" step="0.01" placeholder="Ex: 694.00" />
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">
+                        Preț acum 3 luni (USD)
+                        <span class="tooltip">ℹ️
+                            <span class="tooltip-text">Prețul de închidere acum exact 3 luni. ROC 3M măsoară viteza recentă de creștere - perioada scurtă înseamnă mai multă sensibilitate la mișcări recente.</span>
+                        </span>
+                    </label>
+                    <div class="input-sublabel">Prețul de închidere acum exact 3 luni</div>
+                    <input type="number" id="price3m" step="0.01" placeholder="Ex: 679.20" />
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">
+                        Preț acum 6 luni (USD)
+                        <span class="tooltip">ℹ️
+                            <span class="tooltip-text">Prețul de închidere acum exact 6 luni. ROC 6M măsoară trendul pe termen mediu - perioada mai lungă reduce zgomotul și captează mișcări mai semnificative.</span>
+                        </span>
+                    </label>
+                    <div class="input-sublabel">Prețul de închidere acum exact 6 luni</div>
+                    <input type="number" id="price6m" step="0.01" placeholder="Ex: 650.30" />
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">
+                        SMA 200 zile (USD) - Opțional
+                        <span class="tooltip">ℹ️
+                            <span class="tooltip-text">Media mobilă simplă pe 200 zile = trendul pe termen lung. Dacă prețul este DEASUPRA SMA200, trendul este valid (bullish). Dacă este SUB, trendul este invalid (bearish). Aceasta e linia de apărare: momentum pozitiv + preț sub SMA200 = risc crescut.</span>
+                        </span>
+                    </label>
+                    <div class="input-sublabel">Media mobilă pe 200 zile pentru verificare trend</div>
+                    <div class="trend-input-group">
+                        <input type="number" id="sma200" step="0.01" placeholder="Ex: 581.20" />
+                        <button class="calculate-button" onclick="calculateMomentum()">
+                            Calculează
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="calculator-card">
+                <div class="section-title">Rezultate calcule</div>
+
+                <!-- ROC 3M -->
+                <div class="result-card roc3m">
+                    <div class="result-header">
+                        <div class="result-title">
+                            ROC 3 Luni
+                            <span class="tooltip">ℹ️
+                                <span class="tooltip-text">Rate of Change pe 3 luni = Viteza recentă de creștere. Valoare pozitivă = activ în ascensiune recentă. Valoare negativă = activ în scădere recentă. Pragul informal: >+5% = momentum puternic.</span>
+                            </span>
+                        </div>
+                        <div class="result-value" id="roc3mValue">-</div>
+                    </div>
+                    <div class="result-calculation" id="roc3mCalc">
+                        Calculul va apărea aici
+                    </div>
+                </div>
+
+                <!-- ROC 6M -->
+                <div class="result-card roc6m">
+                    <div class="result-header">
+                        <div class="result-title">
+                            ROC 6 Luni
+                            <span class="tooltip">ℹ️
+                                <span class="tooltip-text">Rate of Change pe 6 luni = Trendul pe termen mediu. Perioada mai lungă reduce zgomotul de piață și captează mișcări mai semnificative. Dacă ROC 6M > ROC 3M = accelerare; dacă ROC 6M < ROC 3M = decelerare.</span>
+                            </span>
+                        </div>
+                        <div class="result-value" id="roc6mValue">-</div>
+                    </div>
+                    <div class="result-calculation" id="roc6mCalc">
+                        Calculul va apărea aici
+                    </div>
+                </div>
+
+                <!-- Scor Final -->
+                <div class="result-card final">
+                    <div class="result-header">
+                        <div class="result-title">
+                            Scor Momentum Final
+                            <span class="tooltip">ℹ️
+                                <span class="tooltip-text">Formula ponderată: 60% ROC 3M + 40% ROC 6M. Acordăm mai multă greutate short-term (3M) pentru reacție rapidă, dar păstrăm 40% pentru context pe termen mediu. Pragul de intrare: >+5%. Sub +5% = așteptare.</span>
+                            </span>
+                        </div>
+                        <div class="result-value" id="finalScore">-</div>
+                    </div>
+                    <div class="result-calculation" id="finalCalc">
+                        Calculul va apărea aici
+                    </div>
+                </div>
+
+                <!-- Trend Check -->
+                <div class="result-card trend" id="trendCard" style="display: none;">
+                    <div class="result-header">
+                        <div class="result-title">
+                            Verificare Trend (SMA 200)
+                            <span class="tooltip">ℹ️
+                                <span class="tooltip-text">SMA 200 = linia de apărare. Preț deasupra = zona de siguranță (bullish). Preț dedesubt = zonă de risc (bearish). Regula: Nu cumperi dacă prețul e sub SMA200, chiar dacă momentum e pozitiv. Risc prea mare de continuare în scădere.</span>
+                            </span>
+                        </div>
+                        <div class="result-value" id="trendValue">-</div>
+                    </div>
+                    <div class="result-calculation" id="trendCalc">
+                        Calculul va apărea aici
+                    </div>
+                </div>
+
+                <!-- Decision Box -->
+                <div class="decision-box" id="decisionBox">
+                    <div class="decision-icon" id="decisionIcon">-</div>
+                    <div class="decision-title" id="decisionTitle">-</div>
+                    <div class="decision-reasons" id="decisionReasons"></div>
+                </div>
+
+                <button class="reset-button" onclick="resetCalculator()">
+                    Calculează alt activ
+                </button>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <div class="disclaimer-title">Notă Importantă</div>
+            <div class="disclaimer-text">
+                Acest calculator oferă o <strong>analiză tehnică obiectivă</strong> bazată pe formule matematice. 
+                Nu reprezintă sfaturi financiare. Este o <strong>strategie educațională</strong> pe care fiecare 
+                investitor trebuie să o adapteze la propriul profil de risc. 
+                Rezultatele nu garantează câștiguri viitoare.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculateMomentum() {
+            // Get inputs
+            const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+            const priceNow = parseFloat(document.getElementById('priceNow').value);
+            const price3m = parseFloat(document.getElementById('price3m').value);
+            const price6m = parseFloat(document.getElementById('price6m').value);
+            const sma200 = parseFloat(document.getElementById('sma200').value);
+
+            // Validate required inputs
+            const errorMsg = document.getElementById('errorMessage');
+            if (!ticker || isNaN(priceNow) || isNaN(price3m) || isNaN(price6m)) {
+                errorMsg.classList.add('show');
+                setTimeout(() => errorMsg.classList.remove('show'), 3000);
+                return;
+            }
+            errorMsg.classList.remove('show');
+
+            // Calculate ROC 3M
+            const roc3m = ((priceNow - price3m) / price3m) * 100;
+            document.getElementById('roc3mValue').textContent = roc3m.toFixed(2) + '%';
+            document.getElementById('roc3mCalc').textContent = 
+                `(${priceNow.toFixed(2)} - ${price3m.toFixed(2)}) / ${price3m.toFixed(2)} × 100 = ${roc3m.toFixed(2)}%`;
+
+            // Calculate ROC 6M
+            const roc6m = ((priceNow - price6m) / price6m) * 100;
+            document.getElementById('roc6mValue').textContent = roc6m.toFixed(2) + '%';
+            document.getElementById('roc6mCalc').textContent = 
+                `(${priceNow.toFixed(2)} - ${price6m.toFixed(2)}) / ${price6m.toFixed(2)} × 100 = ${roc6m.toFixed(2)}%`;
+
+            // Calculate Final Score
+            const finalScore = (roc3m * 0.6) + (roc6m * 0.4);
+            document.getElementById('finalScore').textContent = finalScore.toFixed(2) + '%';
+            document.getElementById('finalCalc').textContent = 
+                `(${roc3m.toFixed(2)}% × 0.6) + (${roc6m.toFixed(2)}% × 0.4) = ${(roc3m * 0.6).toFixed(2)} + ${(roc6m * 0.4).toFixed(2)} = ${finalScore.toFixed(2)}%`;
+
+            // Trend check (if SMA provided)
+            let trendValid = null;
+            if (!isNaN(sma200)) {
+                trendValid = priceNow > sma200;
+                document.getElementById('trendCard').style.display = 'block';
+                document.getElementById('trendValue').textContent = trendValid ? '✓ Trend Valid' : '✗ Trend Invalid';
+                document.getElementById('trendValue').style.color = trendValid ? '#2ECC71' : '#E74C3C';
+                document.getElementById('trendCalc').textContent = 
+                    `${priceNow.toFixed(2)} ${trendValid ? '>' : '<'} ${sma200.toFixed(2)} (SMA 200) → Preț ${trendValid ? 'DEASUPRA' : 'SUB'} trend`;
+            } else {
+                document.getElementById('trendCard').style.display = 'none';
+            }
+
+            // Decision logic
+            const decisionBox = document.getElementById('decisionBox');
+            const decisionIcon = document.getElementById('decisionIcon');
+            const decisionTitle = document.getElementById('decisionTitle');
+            const decisionReasons = document.getElementById('decisionReasons');
+
+            let reasons = '';
+            let shouldBuy = false;
+
+            // Check conditions
+            const momentumGood = finalScore > 5;
+            const trendGood = trendValid === null || trendValid === true;
+
+            if (momentumGood && trendGood) {
+                shouldBuy = true;
+                decisionBox.className = 'decision-box buy';
+                decisionIcon.textContent = '✓';
+                decisionTitle.textContent = `ANALIZĂ VALIDĂ pentru ${ticker}`;
+                
+                reasons += `<div class="reason met">✓ Scor Momentum: ${finalScore.toFixed(2)}% (> +5% prag)</div>`;
+                if (trendValid !== null) {
+                    reasons += `<div class="reason met">✓ Preț > SMA 200: Trend valid</div>`;
+                }
+                reasons += `<div class="reason met">✓ Condițiile tehnice sunt îndeplinite</div>`;
+            } else {
+                shouldBuy = false;
+                decisionBox.className = 'decision-box wait';
+                decisionIcon.textContent = '✗';
+                decisionTitle.textContent = `ANALIZĂ NEFAVORABILĂ pentru ${ticker}`;
+                
+                if (!momentumGood) {
+                    reasons += `<div class="reason not-met">✗ Scor Momentum: ${finalScore.toFixed(2)}% (< +5% prag)</div>`;
+                } else {
+                    reasons += `<div class="reason met">✓ Scor Momentum: ${finalScore.toFixed(2)}% (> +5% prag)</div>`;
+                }
+                
+                if (trendValid !== null) {
+                    if (!trendValid) {
+                        reasons += `<div class="reason not-met">✗ Preț < SMA 200: Trend invalid</div>`;
+                    } else {
+                        reasons += `<div class="reason met">✓ Preț > SMA 200: Trend valid</div>`;
+                    }
+                }
+                
+                reasons += `<div class="reason not-met">✗ Condițiile tehnice nu sunt îndeplinite complet</div>`;
+            }
+
+            decisionReasons.innerHTML = reasons;
+
+            // Show results
+            document.getElementById('resultsSection').classList.add('show');
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function resetCalculator() {
+            document.getElementById('ticker').value = '';
+            document.getElementById('priceNow').value = '';
+            document.getElementById('price3m').value = '';
+            document.getElementById('price6m').value = '';
+            document.getElementById('sma200').value = '';
+            document.getElementById('resultsSection').classList.remove('show');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Allow Enter key to calculate
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calculateMomentum();
+            }
+        });
+    </script>
+</body>
+</html>
